@@ -1,8 +1,10 @@
 import React from 'react'
 
+import { AuthProvider } from './_providers/Auth'
+
 export const metadata = {
-  description: 'A blank template using Payload in a Next.js app.',
-  title: 'Payload Blank Template',
+  description: '',
+  title: 'CimuCRM',
 }
 
 import '@/styles/global.css'
@@ -13,7 +15,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <main>{children}</main>
+        <AuthProvider api="rest">
+          <main>{children}</main>
+        </AuthProvider>
       </body>
     </html>
   )
