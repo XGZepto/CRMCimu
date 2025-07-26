@@ -10,21 +10,21 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
 async function getOrder(id: string) {
+  const headers = await getHeaders()
+  const payload = await getPayload({ config })
+  const { permissions, user } = await payload.auth({ headers })
+
+  if (!user) {
+    redirect(`/login?error=${encodeURIComponent('You must be logged in to access your account.')}&redirect=/dashboard/orders/${id}`)
+  }
+
   try {
-    const headers = await getHeaders()
-    const payload = await getPayload({ config })
-    const { permissions, user } = await payload.auth({ headers })
-
-    if (!user) {
-      redirect(`/login?error=${encodeURIComponent('You must be logged in to access your account.')}&redirect=/dashboard/orders/${id}`)
-    }
-
     const order = await payload.findByID({
       collection: 'orders',
       id,
       depth: 2
     })
-    
+
     return order
   } catch (error) {
     console.error('Error fetching order:', error)
@@ -87,8 +87,9 @@ function formatDateShort(dateString: string) {
   })
 }
 
-export default async function OrderDetailPage({ params }: { params: { id: string } }) {
-  const order = await getOrder(params.id)
+export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const order = await getOrder(id)
 
   if (!order) {
     notFound()

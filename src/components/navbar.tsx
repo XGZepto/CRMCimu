@@ -52,7 +52,7 @@ export function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center space-x-8">
-            <CimuIcon className="h-8 w-8" />
+            <CimuIcon className="h-7 w-7" />
             <span className="font-semibold text-lg hidden sm:block">CRM</span>
           </Link>
 

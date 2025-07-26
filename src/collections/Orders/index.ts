@@ -28,6 +28,10 @@ export const Orders: CollectionConfig = {
             }
         },
         {
+            name: 'additionalNotes',
+            type: 'textarea',
+        },
+        {
             name: 'customer',
             type: 'relationship',
             relationTo: 'customers',

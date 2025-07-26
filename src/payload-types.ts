@@ -344,6 +344,7 @@ export interface Order {
   status?: ('intent' | 'inProgress' | 'completed' | 'cancelled') | null;
   scheduledVisit?: string | null;
   actualVisit?: string | null;
+  additionalNotes?: string | null;
   customer?: (string | null) | Customer;
   items?: (string | Item)[] | null;
   updatedAt: string;
@@ -542,6 +543,7 @@ export interface OrdersSelect<T extends boolean = true> {
   status?: T;
   scheduledVisit?: T;
   actualVisit?: T;
+  additionalNotes?: T;
   customer?: T;
   items?: T;
   updatedAt?: T;

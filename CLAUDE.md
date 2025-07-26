@@ -64,3 +64,31 @@ Docker Compose is available for local MongoDB development. Use `docker-compose u
 - TypeScript strict mode enabled
 - ESLint configured with Next.js and TypeScript rules
 - Custom ESLint rules allow underscore-prefixed unused variables
+
+## Design Philosophy
+
+When working on UI/UX improvements, follow these design principles:
+
+### Core Principles
+1. **Subtle Accents Over Bold Colors**: Use color as tasteful hints, not dominant elements. Avoid overwhelming the existing aesthetic with too much color.
+
+2. **Functional Integration**: Merge actions directly into relevant content sections rather than creating separate UI blocks. Actions should live contextually with their related content.
+
+3. **Touch-Friendly Interactions**: Design large, intuitive tap areas instead of tiny buttons. Prioritize mobile-first interactions with proper touch targets (minimum 44px).
+
+4. **Contextual Actions**: Place functionality where users naturally expect it:
+   - Call buttons integrated with phone numbers
+   - Maps/directions integrated with addresses
+   - Edit actions as floating elements or contextual buttons
+
+5. **Clean Visual Hierarchy**: Maintain the existing design system while adding modern touches. Enhance rather than replace the current aesthetic.
+
+6. **Progressive Enhancement**: Add polish and modern interactions without overwhelming the core design. Think "elegant accents" not "complete redesigns".
+
+### Implementation Examples
+- Make entire phone/address sections clickable rather than adding separate action buttons
+- Use floating edit buttons in corners instead of prominent toolbar buttons
+- Integrate actions into hover states and natural interaction flows
+- Apply subtle color coding (green for calls, blue for maps) without overdoing gradients or bright colors
+
+This approach creates interfaces that feel natural and unobtrusive, enhancing usability without screaming for attention.

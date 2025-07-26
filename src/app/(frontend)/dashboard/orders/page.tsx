@@ -7,15 +7,15 @@ import { Package, Plus } from "lucide-react"
 import { OrdersClient } from "./orders-client"
 
 async function getOrders() {
+  const headers = await getHeaders()
+  const payload = await getPayload({ config })
+  const { permissions, user } = await payload.auth({ headers })
+
+  if (!user) {
+    redirect(`/login?error=${encodeURIComponent('You must be logged in to access your account.')}&redirect=/dashboard/orders`)
+  }
+
   try {
-    const headers = await getHeaders()
-    const payload = await getPayload({ config })
-    const { permissions, user } = await payload.auth({ headers })
-
-    if (!user) {
-      redirect(`/login?error=${encodeURIComponent('You must be logged in to access your account.')}&redirect=/dashboard/orders`)
-    }
-
     const orders = await payload.find({
       collection: 'orders',
       depth: 1,
