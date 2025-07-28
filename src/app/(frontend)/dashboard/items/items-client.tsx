@@ -195,9 +195,11 @@ export function ItemsClient({ items, tailors }: { items: any[], tailors: any[] }
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
             {filterItems(activeTab === "all" ? undefined : activeTab).map((item) => (
-              <ItemCard key={item.id} item={item} />
+              <div key={item.id} className="break-inside-avoid mb-4">
+                <ItemCard item={item} />
+              </div>
             ))}
           </div>
         )}

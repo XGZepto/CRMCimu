@@ -14,16 +14,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { DateTimePicker } from "@/components/ui/date-time-picker"
 import { Calendar, Clock, User, FileText, ArrowLeft, Check } from "lucide-react"
 import Link from "next/link"
 
 interface Customer {
   id: string
   name: string
-  phoneNumber?: string
+  phoneNumber?: string | null
   address: {
     street: string
-    apt?: string
+    apt?: string | null
     city: string
     state: string
     zip: string
@@ -32,13 +33,14 @@ interface Customer {
 
 interface CreateOrderIntentFormProps {
   customers: Customer[]
+  preselectedCustomerId?: string
 }
 
-export function CreateOrderIntentForm({ customers }: CreateOrderIntentFormProps) {
+export function CreateOrderIntentForm({ customers, preselectedCustomerId }: CreateOrderIntentFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedCustomerId, setSelectedCustomerId] = useState("")
-  const [scheduledVisit, setScheduledVisit] = useState("")
+  const [selectedCustomerId, setSelectedCustomerId] = useState(preselectedCustomerId || "")
+  const [scheduledVisit, setScheduledVisit] = useState<Date | undefined>(undefined)
   const [additionalNotes, setAdditionalNotes] = useState("")
 
   const selectedCustomer = customers.find(c => c.id === selectedCustomerId)
@@ -56,11 +58,10 @@ export function CreateOrderIntentForm({ customers }: CreateOrderIntentFormProps)
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          status: 'intent',
           customer: selectedCustomerId,
-          scheduledVisit,
-          additionalNotes: additionalNotes || undefined,
-          items: []
+          scheduledVisit: scheduledVisit?.toISOString(),
+          additionalNotes: additionalNotes.trim() || undefined,
+          status: 'intent'
         }),
       })
 
@@ -78,67 +79,85 @@ export function CreateOrderIntentForm({ customers }: CreateOrderIntentFormProps)
     }
   }
 
-  // Format datetime-local input value
-  const formatDateTimeLocal = (date: Date) => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
-    return `${year}-${month}-${day}T${hours}:${minutes}`
-  }
-
-  // Set minimum datetime to now
-  const minDateTime = formatDateTimeLocal(new Date())
-
   const isFormValid = selectedCustomerId && scheduledVisit
 
   return (
-    <div className="space-y-4 px-4 md:px-0">
+    <div className="space-y-4">
       {/* Back Button */}
-      <Link href="/dashboard/orders">
+      <Link href={preselectedCustomerId ? `/dashboard/clients/${preselectedCustomerId}` : "/dashboard/orders"}>
         <Button variant="ghost" className="mb-4 w-full md:w-auto justify-start">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Orders
+          {preselectedCustomerId ? "Back to Client" : "Back to Orders"}
         </Button>
       </Link>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Customer Selection */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center space-x-2 text-lg">
-              <User className="h-5 w-5" />
-              <span>Select Customer</span>
-            </CardTitle>
-            <CardDescription className="text-sm">
-              Choose the customer for this order intent
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="customer" className="text-sm font-medium">Customer</Label>
-              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select a customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      <div className="flex flex-col py-1">
-                        <span className="font-medium">{customer.name}</span>
-                        {customer.phoneNumber && (
-                          <span className="text-sm text-muted-foreground">{customer.phoneNumber}</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Customer Selection - Only show if no customer is preselected */}
+        {!preselectedCustomerId && (
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <User className="h-5 w-5" />
+                <span>Select Customer</span>
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Choose the customer for this order intent
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="customer" className="text-sm font-medium">Customer</Label>
+                <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Select a customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        <div className="flex flex-col py-1">
+                          <span className="font-medium">{customer.name}</span>
+                          {customer.phoneNumber && (
+                            <span className="text-sm text-muted-foreground">{customer.phoneNumber}</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {selectedCustomer && (
-              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+              {selectedCustomer && (
+                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="space-y-2">
+                    <p className="font-medium text-base">{selectedCustomer.name}</p>
+                    {selectedCustomer.phoneNumber && (
+                      <p className="text-sm text-muted-foreground">{selectedCustomer.phoneNumber}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      {selectedCustomer.address.street}
+                      {selectedCustomer.address.apt && `, ${selectedCustomer.address.apt}`}, {selectedCustomer.address.city}, {selectedCustomer.address.state} {selectedCustomer.address.zip}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Customer Preview - Show when customer is preselected */}
+        {preselectedCustomerId && selectedCustomer && (
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <User className="h-5 w-5" />
+                <span>Customer</span>
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Creating order intent for this customer
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 bg-muted/50 rounded-lg">
                 <div className="space-y-2">
                   <p className="font-medium text-base">{selectedCustomer.name}</p>
                   {selectedCustomer.phoneNumber && (
@@ -150,9 +169,9 @@ export function CreateOrderIntentForm({ customers }: CreateOrderIntentFormProps)
                   </p>
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Pickup Schedule */}
         <Card>
@@ -168,12 +187,9 @@ export function CreateOrderIntentForm({ customers }: CreateOrderIntentFormProps)
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="scheduledVisit" className="text-sm font-medium">Pickup Date & Time</Label>
-              <Input
-                id="scheduledVisit"
-                type="datetime-local"
+              <DateTimePicker
                 value={scheduledVisit}
-                min={minDateTime}
-                onChange={(e) => setScheduledVisit(e.target.value)}
+                onChange={setScheduledVisit}
                 className="h-12 text-base"
               />
             </div>
@@ -225,7 +241,7 @@ export function CreateOrderIntentForm({ customers }: CreateOrderIntentFormProps)
               </div>
             )}
           </Button>
-          <Link href="/dashboard/orders">
+          <Link href={preselectedCustomerId ? `/dashboard/clients/${preselectedCustomerId}` : "/dashboard/orders"}>
             <Button variant="outline" type="button" className="w-full h-12 text-base">
               Cancel
             </Button>

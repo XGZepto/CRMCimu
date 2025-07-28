@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { DateTimePicker } from "@/components/ui/date-time-picker"
 import { ImageGallery } from "@/components/ui/image-gallery"
 import { ContactInfo } from "@/components/ui/contact-info"
 import { 
@@ -81,22 +82,16 @@ export function ItemDetailClient({ item, tailors }: { item: any, tailors: any[] 
   const [price, setPrice] = useState(item.price ? (item.price / 100).toString() : "")
   const [tailorPayout, setTailorPayout] = useState(item.tailorPayout ? item.tailorPayout.toString() : "")
   
-  // Helper function to convert UTC date to local datetime-local format
-  const toLocalDateTimeString = (dateString: string | Date) => {
-    const date = new Date(dateString)
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
-    return `${year}-${month}-${day}T${hours}:${minutes}`
+  // Helper function to convert UTC date string to Date object
+  const parseUTCDate = (dateString: string | Date): Date | undefined => {
+    if (!dateString) return undefined
+    return new Date(dateString)
   }
 
-  // Helper function to convert local datetime-local input to UTC ISO string for API
-  const toUTCISOString = (localDateTimeString: string) => {
-    if (!localDateTimeString) return ""
-    const localDate = new Date(localDateTimeString)
-    return localDate.toISOString()
+  // Helper function to convert Date object to UTC ISO string for API
+  const toUTCISOString = (date: Date | undefined): string => {
+    if (!date) return ""
+    return date.toISOString()
   }
 
   // Get user's timezone for labels
@@ -104,11 +99,11 @@ export function ItemDetailClient({ item, tailors }: { item: any, tailors: any[] 
     return Intl.DateTimeFormat().resolvedOptions().timeZone
   }
 
-  const [scheduledDelivery, setScheduledDelivery] = useState(
-    item.scheduledDelivery ? toLocalDateTimeString(item.scheduledDelivery) : ""
+  const [scheduledDelivery, setScheduledDelivery] = useState<Date | undefined>(
+    parseUTCDate(item.scheduledDelivery)
   )
-  const [actualDelivery, setActualDelivery] = useState(
-    item.actualDelivery ? toLocalDateTimeString(item.actualDelivery) : ""
+  const [actualDelivery, setActualDelivery] = useState<Date | undefined>(
+    parseUTCDate(item.actualDelivery)
   )
   const [isProcessing, setIsProcessing] = useState(false)
   const [isEditingSchedule, setIsEditingSchedule] = useState(false)
@@ -151,24 +146,26 @@ export function ItemDetailClient({ item, tailors }: { item: any, tailors: any[] 
   }
 
   const getCurrentDateTime = () => {
-    return toLocalDateTimeString(new Date())
+    return new Date()
   }
 
   const updateItemStatus = async (newStatus: string, additionalData: any = {}) => {
     setIsProcessing(true)
     try {
       // Convert any datetime fields to UTC before sending to API
-      const processedData = { ...additionalData }
-      if (processedData.scheduledDelivery) {
-        processedData.scheduledDelivery = toUTCISOString(processedData.scheduledDelivery)
+      const dataToSend: any = { status: newStatus }
+      
+      if (scheduledDelivery) {
+        dataToSend.scheduledDelivery = toUTCISOString(scheduledDelivery)
       }
-      if (processedData.actualDelivery) {
-        processedData.actualDelivery = toUTCISOString(processedData.actualDelivery)
+      
+      if (actualDelivery) {
+        dataToSend.actualDelivery = toUTCISOString(actualDelivery)
       }
 
       const updates = {
         status: newStatus,
-        ...processedData
+        ...dataToSend
       }
       
       const response = await fetch(`/api/items/${item.id}`, {
@@ -218,23 +215,55 @@ export function ItemDetailClient({ item, tailors }: { item: any, tailors: any[] 
   }
 
   const handleUpdateSchedule = async () => {
-    if (!scheduledDelivery) {
-      alert('Please set a scheduled delivery time')
-      return
-    }
+    if (!scheduledDelivery) return
 
-    await updateItemStatus(item.status, {
-      scheduledDelivery
-    })
-    setIsEditingSchedule(false)
+    try {
+      const response = await fetch(`/api/items/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scheduledDelivery: toUTCISOString(scheduledDelivery)
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update item')
+      }
+
+      // Refresh page to show updated data
+      window.location.reload()
+    } catch (error) {
+      console.error('Error updating item:', error)
+      alert('Failed to update item. Please try again.')
+    } finally {
+      setIsEditingSchedule(false)
+    }
   }
 
   const handleMarkDelivered = async () => {
     const deliveryTime = actualDelivery || getCurrentDateTime()
-    
-    await updateItemStatus('delivered', {
-      actualDelivery: deliveryTime
-    })
+    const dataToSend: any = { 
+      status: 'delivered',
+      actualDelivery: toUTCISOString(deliveryTime)
+    }
+
+    try {
+      const response = await fetch(`/api/items/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToSend)
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update item')
+      }
+
+      // Refresh page to show updated data
+      window.location.reload()
+    } catch (error) {
+      console.error('Error updating item:', error)
+      alert('Failed to update item. Please try again.')
+    }
   }
 
   const relatedOrder = item.relatedOrder
@@ -368,11 +397,9 @@ export function ItemDetailClient({ item, tailors }: { item: any, tailors: any[] 
                 {!item.scheduledDelivery && (
                   <div>
                     <Label htmlFor="scheduled">Schedule Delivery ({getUserTimezone()})</Label>
-                    <Input
-                      id="scheduled"
-                      type="datetime-local"
+                    <DateTimePicker
                       value={scheduledDelivery}
-                      onChange={(e) => setScheduledDelivery(e.target.value)}
+                      onChange={setScheduledDelivery}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       Set when this item should be delivered to the customer (in your local time)
@@ -413,11 +440,9 @@ export function ItemDetailClient({ item, tailors }: { item: any, tailors: any[] 
                     {isEditingSchedule && (
                       <div className="mt-3 space-y-2">
                         <Label htmlFor="scheduled-edit">Update Delivery Time ({getUserTimezone()})</Label>
-                        <Input
-                          id="scheduled-edit"
-                          type="datetime-local"
+                        <DateTimePicker
                           value={scheduledDelivery}
-                          onChange={(e) => setScheduledDelivery(e.target.value)}
+                          onChange={setScheduledDelivery}
                         />
                         <div className="flex space-x-2">
                           <Button size="sm" onClick={handleUpdateSchedule}>
@@ -437,13 +462,12 @@ export function ItemDetailClient({ item, tailors }: { item: any, tailors: any[] 
                   <div>
                     <Label htmlFor="actual">Actual Delivery Time ({getUserTimezone()})</Label>
                     <div className="flex space-x-2 mt-1">
-                      <Input
-                        id="actual"
-                        type="datetime-local"
-                        value={actualDelivery}
-                        onChange={(e) => setActualDelivery(e.target.value)}
-                        className="flex-1"
-                      />
+                      <div className="flex-1">
+                        <DateTimePicker
+                          value={actualDelivery}
+                          onChange={setActualDelivery}
+                        />
+                      </div>
                       <Button 
                         variant="outline" 
                         size="sm"

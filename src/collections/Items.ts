@@ -26,7 +26,8 @@ export const Items: CollectionConfig = {
                 type: 'upload',
                 relationTo: 'media',
                 }
-            ]
+            ],
+            required: true,
         },
         {
             name: 'actionPoints',

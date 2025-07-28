@@ -280,9 +280,11 @@ export function OrdersClient({ orders }: { orders: any[] }) {
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
             {filterOrders(activeTab === "all" ? undefined : activeTab).map((order) => (
-              <OrderCard key={order.id} order={order} />
+              <div key={order.id} className="break-inside-avoid mb-4">
+                <OrderCard order={order} />
+              </div>
             ))}
           </div>
         )}

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Edit, Phone, MapPin, Calendar, Package, Clock, CheckCircle, XCircle, Truck, ExternalLink, FileText } from "lucide-react"
+import { ArrowLeft, Edit, Phone, MapPin, Calendar, Package, Clock, CheckCircle, XCircle, Truck, ExternalLink, FileText, Plus } from "lucide-react"
 
 function formatPhoneNumber(phoneNumber: string): string {
   if (!phoneNumber) return ''
@@ -233,13 +233,25 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       {/* Orders Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Package className="h-5 w-5 text-muted-foreground" />
-            <span>Orders ({orders.length})</span>
-          </CardTitle>
-          <CardDescription>
-            Order history and current status for this client.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center space-x-2">
+                <Package className="h-5 w-5 text-muted-foreground" />
+                <span>Orders ({orders.length})</span>
+              </CardTitle>
+              <CardDescription>
+                Order history and current status for this client.
+              </CardDescription>
+            </div>
+            {orders.length > 0 && (
+              <Link href={`/dashboard/orders/new?customer=${customer.id}`}>
+                <Button size="sm" className="flex items-center space-x-2">
+                  <Plus className="h-4 w-4" />
+                  <span>Create Order Intent</span>
+                </Button>
+              </Link>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {orders.length > 0 ? (
@@ -284,20 +296,29 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             <div className="text-center py-8">
               <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-muted-foreground mb-2">No orders yet</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-4">
                 This client hasn't placed any orders yet.
               </p>
+              <Link href={`/dashboard/orders/new?customer=${customer.id}`}>
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <Plus className="h-4 w-4" />
+                  <span>Create First Order Intent</span>
+                </Button>
+              </Link>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Floating Edit Button */}
-      <Link href={`/dashboard/clients/${customer.id}/edit`}>
-        <button className="fixed bottom-6 right-6 w-14 h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation active:scale-95 z-40">
-          <Edit className="h-5 w-5" />
-        </button>
-      </Link>
+      {/* Action Buttons */}
+      <div className="flex gap-3 pb-6">
+        <Link href={`/dashboard/clients/${customer.id}/edit`} className="flex-1">
+          <Button variant="outline" className="w-full flex items-center space-x-2">
+            <Edit className="h-4 w-4" />
+            <span>Edit Client</span>
+          </Button>
+        </Link>
+      </div>
     </div>
   )
 }

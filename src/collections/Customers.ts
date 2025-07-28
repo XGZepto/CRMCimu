@@ -15,6 +15,7 @@ export const Customers: CollectionConfig = {
         {
             name: 'phoneNumber',
             type: 'text',
+            required: true,
         },
         {
             name: 'dataPoints',

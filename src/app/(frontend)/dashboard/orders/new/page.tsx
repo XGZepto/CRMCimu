@@ -27,11 +27,16 @@ async function getCustomers() {
   }
 }
 
-export default async function NewOrderPage() {
+export default async function NewOrderPage({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ customer?: string }> 
+}) {
+  const { customer: preselectedCustomerId } = await searchParams
   const customers = await getCustomers()
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-6 mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Create Order Intent</h1>
         <p className="text-muted-foreground">
@@ -39,7 +44,7 @@ export default async function NewOrderPage() {
         </p>
       </div>
 
-      <CreateOrderIntentForm customers={customers} />
+      <CreateOrderIntentForm customers={customers} preselectedCustomerId={preselectedCustomerId} />
     </div>
   )
 }

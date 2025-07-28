@@ -183,12 +183,10 @@ export interface Item {
   id: string;
   status?: ('pendingTailor' | 'inProgress' | 'completed' | 'delivered' | 'cancelled') | null;
   name: string;
-  attachedImages?:
-    | {
-        image?: (string | null) | Media;
-        id?: string | null;
-      }[]
-    | null;
+  attachedImages: {
+    image?: (string | null) | Media;
+    id?: string | null;
+  }[];
   actionPoints?:
     | {
         actionPoint?: string | null;
@@ -215,7 +213,7 @@ export interface Item {
 export interface Tailor {
   id: string;
   name: string;
-  phoneNumber?: string | null;
+  phoneNumber: string;
   address: {
     street: string;
     apt?: string | null;
@@ -303,7 +301,7 @@ export interface Order {
 export interface Customer {
   id: string;
   name: string;
-  phoneNumber?: string | null;
+  phoneNumber: string;
   dataPoints?:
     | {
         dataPoint?: string | null;

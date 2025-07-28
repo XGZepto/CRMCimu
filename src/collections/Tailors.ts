@@ -16,6 +16,7 @@ export const Tailors: CollectionConfig = {
         {
             name: 'phoneNumber',
             type: 'text',
+            required: true,
         },
         addressField,
         {
