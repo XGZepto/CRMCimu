@@ -109,158 +109,170 @@ export function CreateClientForm() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="space-y-6">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-            <CardDescription>
-              Enter the client's basic contact information.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                {...register('name', { required: 'Name is required' })}
-                placeholder="Client's full name"
-              />
-              {errors.name && (
-                <p className="text-sm text-red-600">{errors.name.message}</p>
-              )}
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
-              <Input
-                id="phoneNumber"
-                {...register('phoneNumber')}
-                placeholder="+17025702347"
-              />
-              <p className="text-xs text-muted-foreground">Enter with country code (e.g., +17025702347)</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Address Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Address</CardTitle>
-            <CardDescription>
-              Client's address information (optional).
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="grid gap-2 md:col-span-2">
-                <Label htmlFor="street">Street Address</Label>
-                <Input
-                  id="street"
-                  {...register('address.street')}
-                  placeholder="123 Main Street"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="apt">Apartment/Unit</Label>
-                <Input
-                  id="apt"
-                  {...register('address.apt')}
-                  placeholder="Apt 4B"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  {...register('address.city')}
-                  placeholder="New York"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="state">State</Label>
-                <select
-                  id="state"
-                  {...register('address.state')}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">Select state</option>
-                  {states.map(state => (
-                    <option key={state.value} value={state.value}>
-                      {state.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="zip">ZIP Code</Label>
-                <Input
-                  id="zip"
-                  {...register('address.zip')}
-                  placeholder="10001"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Additional Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Additional Information</CardTitle>
-            <CardDescription>
-              Add any additional notes or information about the client.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {dataPoints.map((dataPoint, index) => (
-                <div key={index} className="flex gap-3">
-                  <Textarea
-                    value={dataPoint.dataPoint}
-                    onChange={(e) => updateDataPoint(index, e.target.value)}
-                    placeholder="Enter additional information..."
-                    className="flex-1 min-h-[80px]"
+        {/* Two Column Layout for Desktop */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Left Column */}
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Basic Information</CardTitle>
+                <CardDescription>
+                  Enter the client's basic contact information.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    {...register('name', { required: 'Name is required' })}
+                    placeholder="Client's full name"
                   />
+                  {errors.name && (
+                    <p className="text-sm text-red-600">{errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="phoneNumber">Phone Number</Label>
+                  <Input
+                    id="phoneNumber"
+                    {...register('phoneNumber')}
+                    placeholder="+17025702347"
+                  />
+                  <p className="text-xs text-muted-foreground">Enter with country code (e.g., +17025702347)</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Address Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Address</CardTitle>
+                <CardDescription>
+                  Client's address information (optional).
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="street">Street Address</Label>
+                    <Input
+                      id="street"
+                      {...register('address.street')}
+                      placeholder="123 Main Street"
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="apt">Apartment/Unit</Label>
+                    <Input
+                      id="apt"
+                      {...register('address.apt')}
+                      placeholder="Apt 4B"
+                    />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        {...register('address.city')}
+                        placeholder="New York"
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="state">State</Label>
+                      <select
+                        id="state"
+                        {...register('address.state')}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="">Select state</option>
+                        {states.map(state => (
+                          <option key={state.value} value={state.value}>
+                            {state.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2 sm:max-w-xs">
+                    <Label htmlFor="zip">ZIP Code</Label>
+                    <Input
+                      id="zip"
+                      {...register('address.zip')}
+                      placeholder="10001"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Additional Information */}
+            <Card className="h-fit">
+              <CardHeader>
+                <CardTitle>Additional Information</CardTitle>
+                <CardDescription>
+                  Add any additional notes or information about the client.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {dataPoints.map((dataPoint, index) => (
+                    <div key={index} className="flex gap-3">
+                      <Textarea
+                        value={dataPoint.dataPoint}
+                        onChange={(e) => updateDataPoint(index, e.target.value)}
+                        placeholder="Enter additional information..."
+                        className="flex-1 min-h-[80px]"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeDataPoint(index)}
+                        className="self-start flex-shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => removeDataPoint(index)}
-                    className="self-start flex-shrink-0"
+                    onClick={addDataPoint}
+                    className="w-full mt-4"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Information
                   </Button>
                 </div>
-              ))}
-              
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addDataPoint}
-                className="w-full mt-4"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Information
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        {error && (
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="pt-6">
-              <p className="text-sm text-red-600">{error}</p>
-            </CardContent>
-          </Card>
-        )}
+            {error && (
+              <Card className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/50">
+                <CardContent className="pt-6">
+                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
 
+        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-6 border-t">
           <Button
             type="button"

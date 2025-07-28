@@ -80,49 +80,60 @@ export default async function ClientsPage() {
 
       {/* Clients List */}
       {clients.length > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-6">
           {clients.map((client) => (
-            <Link key={client.id} href={`/dashboard/clients/${client.id}`}>
+            <Link key={client.id} href={`/dashboard/clients/${client.id}`} className="block">
               <Card className="hover:shadow-md hover:bg-muted/30 transition-all duration-200 cursor-pointer group touch-manipulation active:scale-[0.98]">
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex items-center justify-between">
-                    {/* Client Info */}
-                    <div className="flex-1 space-y-3">
-                      <div>
-                        <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">{client.name}</h3>
-                        <p className="text-xs text-muted-foreground">ID: {client.id}</p>
+                <CardContent className="px-4 sm:px-6">
+                  <div className="flex items-start justify-between gap-4">
+                    {/* Left: Client Name & ID */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3 mb-3">
+                        <h3 className="font-semibold text-lg group-hover:text-primary transition-colors truncate">
+                          {client.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded w-fit">
+                          ID: {client.id}
+                        </p>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-sm">
+                      {/* Contact & Address Row */}
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {/* Phone */}
                         {client.phoneNumber && (
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-2 text-sm">
                             <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            <span className="font-medium text-primary">{formatPhoneNumber(client.phoneNumber)}</span>
+                            <span className="font-medium truncate">
+                              {formatPhoneNumber(client.phoneNumber)}
+                            </span>
                           </div>
                         )}
                         
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="outline" className="text-xs font-medium">
-                            {client.ordersCount} order{client.ordersCount !== 1 ? 's' : ''}
-                          </Badge>
-                        </div>
+                        {/* Address */}
+                        {client.address && (
+                          <div className="flex items-center space-x-2 text-sm text-muted-foreground sm:col-span-1 lg:col-span-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <span className="truncate">
+                              {client.address.street}
+                              {client.address.apt && `, ${client.address.apt}`}
+                              {', '}
+                              {client.address.city}, {client.address.state} {client.address.zip}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Empty div to maintain grid when no address */}
+                        {!client.address && client.phoneNumber && (
+                          <div className="sm:col-span-1 lg:col-span-2"></div>
+                        )}
                       </div>
-
-                      {client.address && (
-                        <div className="flex items-start space-x-2 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                          <span className="line-clamp-2">
-                            {client.address.street}
-                            {client.address.apt && `, ${client.address.apt}`}
-                            {', '}
-                            {client.address.city}, {client.address.state} {client.address.zip}
-                          </span>
-                        </div>
-                      )}
                     </div>
 
-                    {/* Chevron Icon */}
-                    <div className="flex-shrink-0 ml-4">
+                    {/* Right: Orders Badge & Chevron */}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <Badge variant="outline" className="text-xs font-medium">
+                        {client.ordersCount} order{client.ordersCount !== 1 ? 's' : ''}
+                      </Badge>
                       <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
                   </div>
@@ -151,7 +162,7 @@ export default async function ClientsPage() {
 
       {/* Floating Add Client Button */}
       <Link href="/dashboard/clients/new">
-        <button className="fixed bottom-6 right-6 w-14 h-14 bg-primary hover:bg-primary/90 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation active:scale-95 z-40">
+        <button className="fixed bottom-6 right-6 w-14 h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation active:scale-95 z-40">
           <Plus className="h-6 w-6" />
         </button>
       </Link>

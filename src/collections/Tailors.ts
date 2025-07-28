@@ -18,5 +18,11 @@ export const Tailors: CollectionConfig = {
             type: 'text',
         },
         addressField,
+        {
+            name: 'relatedItems',
+            type: 'join',
+            collection: 'items',
+            on: 'assignedTailor',
+        }
     ]
 }

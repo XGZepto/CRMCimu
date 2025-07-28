@@ -68,6 +68,12 @@ export const Items: CollectionConfig = {
         {
             name: 'tailorPayout',
             type: 'number',
+        },
+        {
+            name: 'relatedOrder',
+            type: 'join',
+            collection: 'orders',
+            on: 'items',
         }
     ],
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Menu, X, LayoutDashboard, Users, Package, Scissors } from "lucide-react"
+import { Menu, X, LayoutDashboard, Users, Package, Scissors, ShirtIcon } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -36,6 +36,12 @@ const navigationItems = [
     description: "Track orders"
   },
   {
+    title: "Items",
+    href: "/dashboard/items",
+    icon: ShirtIcon,
+    description: "Manage items and assignments"
+  },
+  {
     title: "Tailors",
     href: "/dashboard/tailors",
     icon: Scissors,
@@ -57,7 +63,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-4">
             {navigationItems.map((item) => (
               <Link
                 key={item.href}

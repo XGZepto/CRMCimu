@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Edit, Phone, MapPin, Calendar, Package, Clock, CheckCircle, XCircle, Truck, ExternalLink, FileText } from "lucide-react"
+import { ArrowLeft, Edit, Phone, MapPin, Calendar, Package, Clock, CheckCircle, XCircle, Truck, ExternalLink, Scissors } from "lucide-react"
 
 function formatPhoneNumber(phoneNumber: string): string {
   if (!phoneNumber) return ''
@@ -32,27 +32,27 @@ function getMapsLink(address: any): string {
   return `https://maps.apple.com/?q=${encodeURIComponent(addressString)}`
 }
 
-async function getCustomer(id: string) {
+async function getTailor(id: string) {
   const headers = await getHeaders()
   const payload = await getPayload({ config })
   const { permissions, user } = await payload.auth({ headers })
 
   if (!user) {
-    redirect(`/login?error=${encodeURIComponent('You must be logged in to access your account.')}&redirect=/dashboard/clients/${id}`)
+    redirect(`/login?error=${encodeURIComponent('You must be logged in to access your account.')}&redirect=/dashboard/tailors/${id}`)
   }
 
   try {
-    const customer = await payload.findByID({
-      collection: 'customers',
+    const tailor = await payload.findByID({
+      collection: 'tailors',
       id,
       depth: 1
     })
 
-    // Get orders for this customer
-    const orders = await payload.find({
-      collection: 'orders',
+    // Get items assigned to this tailor
+    const items = await payload.find({
+      collection: 'items',
       where: {
-        customer: {
+        assignedTailor: {
           equals: id
         }
       },
@@ -61,18 +61,18 @@ async function getCustomer(id: string) {
     })
 
     return {
-      customer,
-      orders: orders.docs || []
+      tailor,
+      items: items.docs || []
     }
   } catch (error) {
-    console.error('Error fetching customer:', error)
+    console.error('Error fetching tailor:', error)
     return null
   }
 }
 
-const statusConfig = {
-  intent: {
-    label: "Intent",
+const itemStatusConfig = {
+  pending: {
+    label: "Pending",
     icon: Clock,
     color: "bg-blue-500",
     badgeVariant: "secondary" as const
@@ -97,15 +97,15 @@ const statusConfig = {
   }
 }
 
-export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function TailorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const data = await getCustomer(id)
+  const data = await getTailor(id)
   
   if (!data) {
     notFound()
   }
 
-  const { customer, orders } = data
+  const { tailor, items } = data
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -128,36 +128,36 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
     <div className="space-y-6">
       {/* Back Button */}
       <div>
-        <Link href="/dashboard/clients">
+        <Link href="/dashboard/tailors">
           <Button variant="ghost" size="sm" className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Clients
+            Back to Tailors
           </Button>
         </Link>
       </div>
 
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{customer.name}</h1>
-        <p className="text-sm text-muted-foreground">Client ID: {customer.id}</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{tailor.name}</h1>
+        <p className="text-sm text-muted-foreground">Tailor ID: {tailor.id}</p>
       </div>
 
-      {/* Client Information */}
+      {/* Tailor Information */}
       <Card>
         <CardHeader>
           <CardTitle>Contact Information</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {customer.phoneNumber && (
-              <a href={getPhoneLink(customer.phoneNumber)} className="block">
+            {tailor.phoneNumber && (
+              <a href={getPhoneLink(tailor.phoneNumber)} className="block">
                 <div className="flex items-center space-x-3 p-3 -m-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation group">
                   <div className="flex-shrink-0">
                     <Phone className="h-5 w-5 text-green-600 group-hover:text-green-700" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Phone • Tap to call</p>
-                    <p className="text-sm font-medium truncate group-hover:text-green-700">{formatPhoneNumber(customer.phoneNumber)}</p>
+                    <p className="text-sm font-medium truncate group-hover:text-green-700">{formatPhoneNumber(tailor.phoneNumber)}</p>
                   </div>
                 </div>
               </a>
@@ -168,25 +168,25 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                 <Calendar className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Member Since</p>
-                <p className="text-sm font-medium">{formatDate(customer.createdAt)}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Joined</p>
+                <p className="text-sm font-medium">{formatDate(tailor.createdAt)}</p>
               </div>
             </div>
 
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
-                <Package className="h-5 w-5 text-muted-foreground" />
+                <Scissors className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Orders</p>
-                <p className="text-sm font-medium">{orders.length}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Assigned Items</p>
+                <p className="text-sm font-medium">{items.length}</p>
               </div>
             </div>
           </div>
 
-          {customer.address && (
+          {tailor.address && (
             <div className="mt-6 pt-6 border-t">
-              <a href={getMapsLink(customer.address)} target="_blank" rel="noopener noreferrer" className="block">
+              <a href={getMapsLink(tailor.address)} target="_blank" rel="noopener noreferrer" className="block">
                 <div className="flex items-start space-x-3 p-3 -m-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation group">
                   <div className="flex-shrink-0">
                     <MapPin className="h-5 w-5 text-blue-600 group-hover:text-blue-700 mt-0.5" />
@@ -194,10 +194,10 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Address • Tap for directions</p>
                     <div className="text-sm space-y-1">
-                      <p className="font-medium group-hover:text-blue-700">{customer.address.street}</p>
-                      {customer.address.apt && <p className="text-muted-foreground">{customer.address.apt}</p>}
+                      <p className="font-medium group-hover:text-blue-700">{tailor.address.street}</p>
+                      {tailor.address.apt && <p className="text-muted-foreground">{tailor.address.apt}</p>}
                       <p className="text-muted-foreground">
-                        {customer.address.city}, {customer.address.state} {customer.address.zip}
+                        {tailor.address.city}, {tailor.address.state} {tailor.address.zip}
                       </p>
                     </div>
                   </div>
@@ -208,71 +208,44 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         </CardContent>
       </Card>
 
-
-      {/* Additional Information */}
-      {customer.dataPoints && customer.dataPoints.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <FileText className="h-5 w-5 text-muted-foreground" />
-              <span>Additional Information</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {customer.dataPoints.map((item: any, index: number) => (
-                <div key={index} className="bg-muted/50 p-4 rounded-lg border">
-                  <p className="text-sm whitespace-pre-wrap">{item.dataPoint}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Orders Section */}
+      {/* Assigned Items Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Package className="h-5 w-5 text-muted-foreground" />
-            <span>Orders ({orders.length})</span>
+            <Scissors className="h-5 w-5 text-muted-foreground" />
+            <span>Assigned Items ({items.length})</span>
           </CardTitle>
           <CardDescription>
-            Order history and current status for this client.
+            Items currently assigned to this tailor.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {orders.length > 0 ? (
+          {items.length > 0 ? (
             <div className="space-y-4">
-              {orders.map((order: any) => {
-                const config = statusConfig[order.status as keyof typeof statusConfig]
+              {items.map((item: any) => {
+                const config = itemStatusConfig[item.status as keyof typeof itemStatusConfig] || itemStatusConfig.pending
                 const StatusIcon = config.icon
                 
                 return (
-                  <Link key={order.id} href={`/dashboard/orders/${order.id}`}>
+                  <Link key={item.id} href={`/dashboard/items/${item.id}`}>
                     <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
                       <div className="flex items-center space-x-4">
                         <div className={`p-2 rounded-full ${config.color} text-white`}>
                           <StatusIcon className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="font-medium">Order #{order.id}</p>
+                          <p className="font-medium">{item.title || `Item #${item.id}`}</p>
                           <p className="text-sm text-muted-foreground">
-                            Created {formatDate(order.createdAt)}
+                            Assigned {formatDate(item.createdAt)}
                           </p>
-                          {order.scheduledVisit && (
+                          {item.category && (
                             <p className="text-sm text-muted-foreground">
-                              Scheduled: {formatDateTime(order.scheduledVisit)}
+                              Category: {item.category}
                             </p>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
-                        {order.items && order.items.length > 0 && (
-                          <span className="text-sm text-muted-foreground">
-                            {order.items.length} item{order.items.length !== 1 ? 's' : ''}
-                          </span>
-                        )}
                         <Badge variant={config.badgeVariant}>{config.label}</Badge>
                       </div>
                     </div>
@@ -282,10 +255,10 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             </div>
           ) : (
             <div className="text-center py-8">
-              <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-muted-foreground mb-2">No orders yet</h3>
+              <Scissors className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground mb-2">No items assigned</h3>
               <p className="text-sm text-muted-foreground">
-                This client hasn't placed any orders yet.
+                This tailor doesn't have any items assigned yet.
               </p>
             </div>
           )}
@@ -293,7 +266,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       </Card>
 
       {/* Floating Edit Button */}
-      <Link href={`/dashboard/clients/${customer.id}/edit`}>
+      <Link href={`/dashboard/tailors/${tailor.id}/edit`}>
         <button className="fixed bottom-6 right-6 w-14 h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation active:scale-95 z-40">
           <Edit className="h-5 w-5" />
         </button>

@@ -7,8 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Plus, Trash2, Save } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { Save } from "lucide-react"
 import { states } from "@/fields/utils/constants"
 
 type FormData = {
@@ -21,16 +21,9 @@ type FormData = {
     state: string
     zip: string
   }
-  dataPoints: Array<{
-    dataPoint: string
-  }>
 }
 
-interface EditClientFormProps {
-  customer: any
-}
-
-export function EditClientForm({ customer }: EditClientFormProps) {
+export function CreateTailorForm() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -38,48 +31,28 @@ export function EditClientForm({ customer }: EditClientFormProps) {
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors }
   } = useForm<FormData>({
     defaultValues: {
-      name: customer.name || '',
-      phoneNumber: customer.phoneNumber || '',
+      name: '',
+      phoneNumber: '',
       address: {
-        street: customer.address?.street || '',
-        apt: customer.address?.apt || '',
-        city: customer.address?.city || '',
-        state: customer.address?.state || '',
-        zip: customer.address?.zip || ''
-      },
-      dataPoints: customer.dataPoints || []
+        street: '',
+        apt: '',
+        city: '',
+        state: '',
+        zip: ''
+      }
     }
   })
-
-  const dataPoints = watch('dataPoints') || []
-
-  const addDataPoint = () => {
-    setValue('dataPoints', [...dataPoints, { dataPoint: '' }])
-  }
-
-  const removeDataPoint = (index: number) => {
-    const newDataPoints = dataPoints.filter((_, i) => i !== index)
-    setValue('dataPoints', newDataPoints)
-  }
-
-  const updateDataPoint = (index: number, value: string) => {
-    const newDataPoints = [...dataPoints]
-    newDataPoints[index] = { dataPoint: value }
-    setValue('dataPoints', newDataPoints)
-  }
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true)
     setError(null)
 
     try {
-      const response = await fetch(`/api/customers/${customer.id}`, {
-        method: 'PATCH',
+      const response = await fetch('/api/tailors', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -92,17 +65,17 @@ export function EditClientForm({ customer }: EditClientFormProps) {
             city: data.address.city,
             state: data.address.state,
             zip: data.address.zip
-          } : undefined,
-          dataPoints: data.dataPoints.filter(dp => dp.dataPoint.trim() !== '')
+          } : undefined
         })
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.errors?.[0]?.message || 'Failed to update client')
+        throw new Error(errorData.errors?.[0]?.message || 'Failed to create tailor')
       }
 
-      router.push(`/dashboard/clients/${customer.id}`)
+      const result = await response.json()
+      router.push(`/dashboard/tailors/${result.doc.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -122,7 +95,7 @@ export function EditClientForm({ customer }: EditClientFormProps) {
               <CardHeader>
                 <CardTitle>Basic Information</CardTitle>
                 <CardDescription>
-                  Update the client's basic contact information.
+                  Enter the tailor's basic contact information.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -131,7 +104,7 @@ export function EditClientForm({ customer }: EditClientFormProps) {
                   <Input
                     id="name"
                     {...register('name', { required: 'Name is required' })}
-                    placeholder="Client's full name"
+                    placeholder="Tailor's full name"
                   />
                   {errors.name && (
                     <p className="text-sm text-red-600">{errors.name.message}</p>
@@ -149,13 +122,16 @@ export function EditClientForm({ customer }: EditClientFormProps) {
                 </div>
               </CardContent>
             </Card>
+          </div>
 
+          {/* Right Column */}
+          <div className="space-y-6">
             {/* Address Information */}
             <Card>
               <CardHeader>
                 <CardTitle>Address</CardTitle>
                 <CardDescription>
-                  Update the client's address information.
+                  Tailor's address information (optional).
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -174,7 +150,7 @@ export function EditClientForm({ customer }: EditClientFormProps) {
                     <Input
                       id="apt"
                       {...register('address.apt')}
-                      placeholder="Apt 4B"
+                      placeholder="Suite 4B"
                     />
                   </div>
 
@@ -216,53 +192,6 @@ export function EditClientForm({ customer }: EditClientFormProps) {
                 </div>
               </CardContent>
             </Card>
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
-            {/* Additional Information */}
-            <Card className="h-fit">
-              <CardHeader>
-                <CardTitle>Additional Information</CardTitle>
-                <CardDescription>
-                  Update any additional notes or information about the client.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {dataPoints.map((dataPoint, index) => (
-                    <div key={index} className="flex gap-3">
-                      <Textarea
-                        value={dataPoint.dataPoint}
-                        onChange={(e) => updateDataPoint(index, e.target.value)}
-                        placeholder="Enter additional information..."
-                        className="flex-1 min-h-[80px]"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeDataPoint(index)}
-                        className="self-start flex-shrink-0"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addDataPoint}
-                    className="w-full mt-4"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Information
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
 
             {error && (
               <Card className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/50">
@@ -287,7 +216,7 @@ export function EditClientForm({ customer }: EditClientFormProps) {
           </Button>
           <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto order-1 sm:order-2">
             <Save className="h-4 w-4 mr-2" />
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+            {isSubmitting ? 'Creating...' : 'Create Tailor'}
           </Button>
         </div>
       </form>

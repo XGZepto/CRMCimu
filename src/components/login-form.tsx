@@ -59,7 +59,6 @@ export function LoginForm({
   const onSubmit = useCallback(
     async (data: FormData) => {
 
-      console.log(data)
       setError(null) // Clear any existing errors
       setIsSuccess(false)
       

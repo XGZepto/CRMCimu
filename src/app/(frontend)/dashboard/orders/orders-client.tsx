@@ -6,6 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { 
   Package, 
   Clock, 
@@ -15,9 +22,8 @@ import {
   Phone,
   MapPin,
   Truck,
-  FileText,
   ShoppingBag,
-  ExternalLink
+  Filter
 } from "lucide-react"
 
 const statusConfig = {
@@ -51,6 +57,13 @@ function OrderCard({ order }: { order: any }) {
   const config = statusConfig[order.status as keyof typeof statusConfig]
   const StatusIcon = config.icon
 
+  // Utility to pretty-print camelCase/slug statuses (e.g. "inProgress" → "In Progress")
+  const formatStatus = (status: string) =>
+    statusConfig[status as keyof typeof statusConfig]?.label ||
+    status
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (str) => str.toUpperCase())
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -66,9 +79,10 @@ function OrderCard({ order }: { order: any }) {
 
   return (
     <Link href={`/dashboard/orders/${order.id}`}>
-      <Card className="w-full hover:shadow-md transition-shadow cursor-pointer">
+      {/* Allow header content to wrap on narrow screens to prevent horizontal overflow */}
+      <Card className="w-full hover:shadow-md transition-shadow cursor-pointer overflow-hidden">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center space-x-3">
               <div className={`p-2 rounded-full ${config.color} text-white`}>
                 <StatusIcon className="h-4 w-4" />
@@ -85,7 +99,6 @@ function OrderCard({ order }: { order: any }) {
             </div>
             <div className="flex items-center space-x-2">
               <Badge variant={config.badgeVariant}>{config.label}</Badge>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
             </div>
           </div>
         </CardHeader>
@@ -132,15 +145,16 @@ function OrderCard({ order }: { order: any }) {
               <div className="space-y-2">
                 {order.items?.slice(0, 3).map((item: any) => (
                   <div key={item.id} className="flex items-center justify-between text-sm">
-                    <span className="flex items-center space-x-2">
-                      <ShoppingBag className="h-3 w-3" />
-                      <span>{item.name}</span>
+                    <span className="flex items-center space-x-2 min-w-0">
+                      <ShoppingBag className="h-3 w-3 shrink-0" />
+                      {/* Truncate long item names to keep card width in check */}
+                      <span className="truncate">{item.name}</span>
                     </span>
                     <Badge 
                       variant={item.status === 'delivered' ? 'outline' : 'secondary'}
                       className="text-xs"
                     >
-                      {item.status}
+                      {formatStatus(item.status)}
                     </Badge>
                   </div>
                 ))}
@@ -161,12 +175,21 @@ function OrderCard({ order }: { order: any }) {
                 <span className="text-muted-foreground">Total Items</span>
                 <span className="font-medium">{totalItems}</span>
               </div>
-              {order.totalAmount && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Total Amount</span>
-                  <span className="font-semibold">${order.totalAmount}</span>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Customer Total</span>
+                <span className="font-semibold text-green-600">
+                  ${order.items?.reduce((sum: number, item: any) => sum + (item.price || 0), 0).toFixed(2) || '0.00'}
+                </span>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <div className="flex items-center space-x-2 text-sm text-blue-700 dark:text-blue-300">
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="font-medium">Ready for invoicing</span>
                 </div>
-              )}
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  All items delivered - create invoice to collect payment
+                </p>
+              </div>
             </div>
           )}
 
@@ -199,75 +222,71 @@ export function OrdersClient({ orders }: { orders: any[] }) {
     return filterOrders(status).length
   }
 
+  const filterOptions = [
+    { value: "all", label: "All", count: getStatusCount() },
+    { value: "intent", label: "Intent", count: getStatusCount("intent") },
+    { value: "inProgress", label: "In Progress", count: getStatusCount("inProgress") },
+    { value: "completed", label: "Completed", count: getStatusCount("completed") },
+    { value: "cancelled", label: "Cancelled", count: getStatusCount("cancelled") }
+  ]
+
+  const currentFilter = filterOptions.find(option => option.value === activeTab) || filterOptions[0]
+
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-5">
-        <TabsTrigger value="all" className="text-xs sm:text-sm">
-          All ({getStatusCount()})
-        </TabsTrigger>
-        <TabsTrigger value="intent" className="text-xs sm:text-sm">
-          Intent ({getStatusCount("intent")})
-        </TabsTrigger>
-        <TabsTrigger value="inProgress" className="text-xs sm:text-sm">
-          In Progress ({getStatusCount("inProgress")})
-        </TabsTrigger>
-        <TabsTrigger value="completed" className="text-xs sm:text-sm">
-          Completed ({getStatusCount("completed")})
-        </TabsTrigger>
-        <TabsTrigger value="cancelled" className="text-xs sm:text-sm">
-          Cancelled ({getStatusCount("cancelled")})
-        </TabsTrigger>
-      </TabsList>
+    <div className="w-full">
+      {/* Desktop Tabs */}
+      <div className="hidden md:block">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            {filterOptions.map((option) => (
+              <TabsTrigger key={option.value} value={option.value} className="text-sm">
+                {option.label} ({option.count})
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
 
-      <TabsContent value="all" className="mt-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filterOrders().map((order) => (
-            <OrderCard key={order.id} order={order} />
-          ))}
-        </div>
-      </TabsContent>
+      {/* Mobile Filter Select */}
+      <div className="md:hidden mb-6">
+        <Select value={activeTab} onValueChange={setActiveTab}>
+          <SelectTrigger className="w-full">
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4" />
+              <SelectValue placeholder="Filter orders" />
+            </div>
+          </SelectTrigger>
+          <SelectContent>
+            {filterOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                <div className="flex items-center justify-between w-full">
+                  <span>{option.label}</span>
+                  <Badge variant="secondary" className="ml-2">{option.count}</Badge>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      <TabsContent value="intent" className="mt-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filterOrders("intent").map((order) => (
-            <OrderCard key={order.id} order={order} />
-          ))}
-        </div>
-      </TabsContent>
-
-      <TabsContent value="inProgress" className="mt-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filterOrders("inProgress").map((order) => (
-            <OrderCard key={order.id} order={order} />
-          ))}
-        </div>
-      </TabsContent>
-
-      <TabsContent value="completed" className="mt-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filterOrders("completed").map((order) => (
-            <OrderCard key={order.id} order={order} />
-          ))}
-        </div>
-      </TabsContent>
-
-      <TabsContent value="cancelled" className="mt-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filterOrders("cancelled").map((order) => (
-            <OrderCard key={order.id} order={order} />
-          ))}
-        </div>
-      </TabsContent>
-
-      {filterOrders(activeTab === "all" ? undefined : activeTab).length === 0 && (
-        <div className="text-center py-12">
-          <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium text-muted-foreground mb-2">No orders found</h3>
-          <p className="text-sm text-muted-foreground">
-            {activeTab === "all" ? "Create your first order to get started." : `No ${activeTab} orders at the moment.`}
-          </p>
-        </div>
-      )}
-    </Tabs>
+      {/* Orders Grid */}
+      <div className="mt-6">
+        {filterOrders(activeTab === "all" ? undefined : activeTab).length === 0 ? (
+          <div className="text-center py-12">
+            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-muted-foreground mb-2">No orders found</h3>
+            <p className="text-sm text-muted-foreground">
+              {activeTab === "all" ? "Create your first order to get started." : `No ${activeTab} orders at the moment.`}
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filterOrders(activeTab === "all" ? undefined : activeTab).map((order) => (
+              <OrderCard key={order.id} order={order} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

@@ -77,7 +77,17 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    items: {
+      relatedOrder: 'orders';
+    };
+    tailors: {
+      relatedItems: 'items';
+    };
+    customers: {
+      placedOrders: 'orders';
+    };
+  };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -190,6 +200,11 @@ export interface Item {
   actualDelivery?: string | null;
   price?: number | null;
   tailorPayout?: number | null;
+  relatedOrder?: {
+    docs?: (string | Order)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -258,6 +273,26 @@ export interface Tailor {
       | 'WY';
     zip: string;
   };
+  relatedItems?: {
+    docs?: (string | Item)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: string;
+  status?: ('intent' | 'inProgress' | 'completed' | 'cancelled') | null;
+  scheduledVisit?: string | null;
+  actualVisit?: string | null;
+  additionalNotes?: string | null;
+  customer?: (string | null) | Customer;
+  items?: (string | Item)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -332,21 +367,11 @@ export interface Customer {
       | 'WY';
     zip: string;
   };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "orders".
- */
-export interface Order {
-  id: string;
-  status?: ('intent' | 'inProgress' | 'completed' | 'cancelled') | null;
-  scheduledVisit?: string | null;
-  actualVisit?: string | null;
-  additionalNotes?: string | null;
-  customer?: (string | null) | Customer;
-  items?: (string | Item)[] | null;
+  placedOrders?: {
+    docs?: (string | Order)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -488,6 +513,7 @@ export interface ItemsSelect<T extends boolean = true> {
   actualDelivery?: T;
   price?: T;
   tailorPayout?: T;
+  relatedOrder?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -507,6 +533,7 @@ export interface TailorsSelect<T extends boolean = true> {
         state?: T;
         zip?: T;
       };
+  relatedItems?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -532,6 +559,7 @@ export interface CustomersSelect<T extends boolean = true> {
         state?: T;
         zip?: T;
       };
+  placedOrders?: T;
   updatedAt?: T;
   createdAt?: T;
 }

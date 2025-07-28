@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Plus, Trash2, Save } from "lucide-react"
+import { Save } from "lucide-react"
 import { states } from "@/fields/utils/constants"
 
 type FormData = {
@@ -21,16 +20,13 @@ type FormData = {
     state: string
     zip: string
   }
-  dataPoints: Array<{
-    dataPoint: string
-  }>
 }
 
-interface EditClientFormProps {
-  customer: any
+interface EditTailorFormProps {
+  tailor: any
 }
 
-export function EditClientForm({ customer }: EditClientFormProps) {
+export function EditTailorForm({ tailor }: EditTailorFormProps) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -38,47 +34,27 @@ export function EditClientForm({ customer }: EditClientFormProps) {
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors }
   } = useForm<FormData>({
     defaultValues: {
-      name: customer.name || '',
-      phoneNumber: customer.phoneNumber || '',
+      name: tailor.name || '',
+      phoneNumber: tailor.phoneNumber || '',
       address: {
-        street: customer.address?.street || '',
-        apt: customer.address?.apt || '',
-        city: customer.address?.city || '',
-        state: customer.address?.state || '',
-        zip: customer.address?.zip || ''
-      },
-      dataPoints: customer.dataPoints || []
+        street: tailor.address?.street || '',
+        apt: tailor.address?.apt || '',
+        city: tailor.address?.city || '',
+        state: tailor.address?.state || '',
+        zip: tailor.address?.zip || ''
+      }
     }
   })
-
-  const dataPoints = watch('dataPoints') || []
-
-  const addDataPoint = () => {
-    setValue('dataPoints', [...dataPoints, { dataPoint: '' }])
-  }
-
-  const removeDataPoint = (index: number) => {
-    const newDataPoints = dataPoints.filter((_, i) => i !== index)
-    setValue('dataPoints', newDataPoints)
-  }
-
-  const updateDataPoint = (index: number, value: string) => {
-    const newDataPoints = [...dataPoints]
-    newDataPoints[index] = { dataPoint: value }
-    setValue('dataPoints', newDataPoints)
-  }
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true)
     setError(null)
 
     try {
-      const response = await fetch(`/api/customers/${customer.id}`, {
+      const response = await fetch(`/api/tailors/${tailor.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -92,17 +68,16 @@ export function EditClientForm({ customer }: EditClientFormProps) {
             city: data.address.city,
             state: data.address.state,
             zip: data.address.zip
-          } : undefined,
-          dataPoints: data.dataPoints.filter(dp => dp.dataPoint.trim() !== '')
+          } : undefined
         })
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.errors?.[0]?.message || 'Failed to update client')
+        throw new Error(errorData.errors?.[0]?.message || 'Failed to update tailor')
       }
 
-      router.push(`/dashboard/clients/${customer.id}`)
+      router.push(`/dashboard/tailors/${tailor.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -122,7 +97,7 @@ export function EditClientForm({ customer }: EditClientFormProps) {
               <CardHeader>
                 <CardTitle>Basic Information</CardTitle>
                 <CardDescription>
-                  Update the client's basic contact information.
+                  Update the tailor's basic contact information.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -131,7 +106,7 @@ export function EditClientForm({ customer }: EditClientFormProps) {
                   <Input
                     id="name"
                     {...register('name', { required: 'Name is required' })}
-                    placeholder="Client's full name"
+                    placeholder="Tailor's full name"
                   />
                   {errors.name && (
                     <p className="text-sm text-red-600">{errors.name.message}</p>
@@ -149,13 +124,16 @@ export function EditClientForm({ customer }: EditClientFormProps) {
                 </div>
               </CardContent>
             </Card>
+          </div>
 
+          {/* Right Column */}
+          <div className="space-y-6">
             {/* Address Information */}
             <Card>
               <CardHeader>
                 <CardTitle>Address</CardTitle>
                 <CardDescription>
-                  Update the client's address information.
+                  Update the tailor's address information.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -174,7 +152,7 @@ export function EditClientForm({ customer }: EditClientFormProps) {
                     <Input
                       id="apt"
                       {...register('address.apt')}
-                      placeholder="Apt 4B"
+                      placeholder="Suite 4B"
                     />
                   </div>
 
@@ -213,53 +191,6 @@ export function EditClientForm({ customer }: EditClientFormProps) {
                       placeholder="10001"
                     />
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
-            {/* Additional Information */}
-            <Card className="h-fit">
-              <CardHeader>
-                <CardTitle>Additional Information</CardTitle>
-                <CardDescription>
-                  Update any additional notes or information about the client.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {dataPoints.map((dataPoint, index) => (
-                    <div key={index} className="flex gap-3">
-                      <Textarea
-                        value={dataPoint.dataPoint}
-                        onChange={(e) => updateDataPoint(index, e.target.value)}
-                        placeholder="Enter additional information..."
-                        className="flex-1 min-h-[80px]"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeDataPoint(index)}
-                        className="self-start flex-shrink-0"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addDataPoint}
-                    className="w-full mt-4"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Information
-                  </Button>
                 </div>
               </CardContent>
             </Card>

@@ -27,5 +27,11 @@ export const Customers: CollectionConfig = {
             ]
         },
         addressField,
+        {
+            name: 'placedOrders',
+            type: 'join',
+            collection: 'orders',
+            on: 'customer',
+        }
     ]
 }

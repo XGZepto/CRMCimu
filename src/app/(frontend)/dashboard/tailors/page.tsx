@@ -1,238 +1,171 @@
+import { headers as getHeaders } from 'next/headers.js'
+import config from '@/payload.config'
+import { getPayload } from 'payload'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Scissors, Plus, Star, Clock, CheckCircle, Phone, Mail } from "lucide-react"
+import { Scissors, Plus, Phone, MapPin, ChevronRight } from "lucide-react"
 
-export default function TailorsPage() {
-  const tailors = [
-    {
-      id: "TAI-001",
-      name: "Alice Johnson",
-      email: "alice.johnson@email.com",
-      phone: "+1 (555) 123-4567",
-      specialization: "Wedding Dresses",
-      experience: "8 years",
-      status: "Available",
-      rating: 4.9,
-      activeOrders: 3,
-      completedOrders: 156,
-      joinDate: "2020-03-15"
-    },
-    {
-      id: "TAI-002",
-      name: "Bob Wilson",
-      email: "bob.wilson@email.com",
-      phone: "+1 (555) 234-5678",
-      specialization: "Men's Suits",
-      experience: "12 years",
-      status: "Busy",
-      rating: 4.8,
-      activeOrders: 5,
-      completedOrders: 287,
-      joinDate: "2018-07-22"
-    },
-    {
-      id: "TAI-003",
-      name: "Carol Davis",
-      email: "carol.davis@email.com",
-      phone: "+1 (555) 345-6789",
-      specialization: "Casual Wear",
-      experience: "5 years",
-      status: "Available",
-      rating: 4.7,
-      activeOrders: 2,
-      completedOrders: 98,
-      joinDate: "2021-11-08"
-    },
-    {
-      id: "TAI-004",
-      name: "David Martinez",
-      email: "david.martinez@email.com",
-      phone: "+1 (555) 456-7890",
-      specialization: "Alterations",
-      experience: "15 years",
-      status: "On Leave",
-      rating: 4.6,
-      activeOrders: 0,
-      completedOrders: 423,
-      joinDate: "2016-01-12"
-    },
-    {
-      id: "TAI-005",
-      name: "Eva Thompson",
-      email: "eva.thompson@email.com",
-      phone: "+1 (555) 567-8901",
-      specialization: "Evening Wear",
-      experience: "6 years",
-      status: "Available",
-      rating: 4.9,
-      activeOrders: 4,
-      completedOrders: 134,
-      joinDate: "2019-09-03"
-    }
-  ]
+function formatPhoneNumber(phoneNumber: string): string {
+  if (!phoneNumber) return ''
+  
+  // If it starts with +1, format as US number
+  if (phoneNumber.startsWith('+1') && phoneNumber.length === 12) {
+    const number = phoneNumber.slice(2)
+    return `(${number.slice(0, 3)}) ${number.slice(3, 6)}-${number.slice(6)}`
+  }
+  
+  // For other international numbers, just return as is
+  return phoneNumber
+}
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "Available":
-        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />{status}</Badge>
-      case "Busy":
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" />{status}</Badge>
-      case "On Leave":
-        return <Badge variant="outline">{status}</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
-    }
+async function getTailors() {
+  const headers = await getHeaders()
+  const payload = await getPayload({ config })
+  const { permissions, user } = await payload.auth({ headers })
+
+  if (!user) {
+    redirect(`/login?error=${encodeURIComponent('You must be logged in to access your account.')}&redirect=/dashboard/tailors`)
   }
 
+  try {
+    const tailors = await payload.find({
+      collection: 'tailors',
+      depth: 1,
+      limit: 100,
+      sort: '-createdAt'
+    })
+    
+    // Get items count for each tailor
+    const tailorsWithItems = await Promise.all(
+      tailors.docs.map(async (tailor) => {
+        const items = await payload.find({
+          collection: 'items',
+          where: {
+            assignedTailor: {
+              equals: tailor.id
+            }
+          },
+          limit: 0 // Just get count
+        })
+        return {
+          ...tailor,
+          itemsCount: items.totalDocs
+        }
+      })
+    )
+    
+    return tailorsWithItems || []
+  } catch (error) {
+    console.error('Error fetching tailors:', error)
+    return []
+  }
+}
+
+export default async function TailorsPage() {
+  const tailors = await getTailors()
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tailors</h1>
-          <p className="text-muted-foreground">
-            Manage your team of skilled tailors and their assignments
-          </p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Tailors</h1>
+        <p className="text-sm text-muted-foreground">
+          Manage your tailor network and assignments
+        </p>
+      </div>
+
+      {/* Tailors List */}
+      {tailors.length > 0 ? (
+        <div className="space-y-6">
+          {tailors.map((tailor) => (
+            <Link key={tailor.id} href={`/dashboard/tailors/${tailor.id}`} className="block">
+              <Card className="hover:shadow-md hover:bg-muted/30 transition-all duration-200 cursor-pointer group touch-manipulation active:scale-[0.98]">
+                <CardContent className="px-4 sm:px-6">
+                  <div className="flex items-start justify-between gap-4">
+                    {/* Left: Tailor Name & ID */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3 mb-3">
+                        <h3 className="font-semibold text-lg group-hover:text-primary transition-colors truncate">
+                          {tailor.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded w-fit">
+                          ID: {tailor.id}
+                        </p>
+                      </div>
+
+                      {/* Contact & Address Row */}
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {/* Phone */}
+                        {tailor.phoneNumber && (
+                          <div className="flex items-center space-x-2 text-sm">
+                            <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <span className="font-medium truncate">
+                              {formatPhoneNumber(tailor.phoneNumber)}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Address */}
+                        {tailor.address && (
+                          <div className="flex items-center space-x-2 text-sm text-muted-foreground sm:col-span-1 lg:col-span-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <span className="truncate">
+                              {tailor.address.street}
+                              {tailor.address.apt && `, ${tailor.address.apt}`}
+                              {', '}
+                              {tailor.address.city}, {tailor.address.state} {tailor.address.zip}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Empty div to maintain grid when no address */}
+                        {!tailor.address && tailor.phoneNumber && (
+                          <div className="sm:col-span-1 lg:col-span-2"></div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right: Items Badge & Chevron */}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <Badge variant="outline" className="text-xs font-medium">
+                        {tailor.itemsCount} item{tailor.itemsCount !== 1 ? 's' : ''}
+                      </Badge>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
         </div>
-        <Button className="flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Add Tailor</span>
-        </Button>
-      </div>
+      ) : (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Scissors className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-muted-foreground mb-2">No tailors found</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Add your first tailor to get started.
+            </p>
+            <Link href="/dashboard/tailors/new">
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Tailor
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Tailor Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Tailors</CardTitle>
-            <Scissors className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">18</div>
-            <p className="text-xs text-muted-foreground">
-              Active team members
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">
-              Ready for new orders
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Busy</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">5</div>
-            <p className="text-xs text-muted-foreground">
-              Working on orders
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Rating</CardTitle>
-            <Star className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">4.8</div>
-            <p className="text-xs text-muted-foreground">
-              Customer satisfaction
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tailors Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tailor Directory</CardTitle>
-          <CardDescription>
-            Manage your tailors, their specializations, and current workload.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tailor</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Specialization</TableHead>
-                <TableHead>Experience</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Rating</TableHead>
-                <TableHead>Orders</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tailors.map((tailor) => (
-                <TableRow key={tailor.id}>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="font-medium">{tailor.name}</div>
-                      <div className="text-sm text-muted-foreground">{tailor.id}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2 text-sm">
-                        <Mail className="h-3 w-3" />
-                        <span>{tailor.email}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm">
-                        <Phone className="h-3 w-3" />
-                        <span>{tailor.phone}</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{tailor.specialization}</Badge>
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {tailor.experience}
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(tailor.status)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">{tailor.rating}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div className="font-medium">{tailor.activeOrders} active</div>
-                      <div className="text-muted-foreground">{tailor.completedOrders} completed</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
-                        View Profile
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        Assign Order
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Floating Add Tailor Button */}
+      <Link href="/dashboard/tailors/new">
+        <button className="fixed bottom-6 right-6 w-14 h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation active:scale-95 z-40">
+          <Plus className="h-6 w-6" />
+        </button>
+      </Link>
     </div>
   )
 }

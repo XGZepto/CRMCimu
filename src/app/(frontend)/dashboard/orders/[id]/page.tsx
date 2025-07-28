@@ -3,11 +3,12 @@ import config from '@/payload.config'
 import { getPayload } from 'payload'
 import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Calendar, Phone, MapPin, Package, CheckCircle, Clock, Truck, XCircle, FileText, User, Scissors } from "lucide-react"
+import { ArrowLeft, Calendar, Phone, MapPin, Package, CheckCircle, Clock, Truck, XCircle, FileText, User, Scissors, CreditCard, Send, DollarSign, Receipt } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { OrderStatusManager } from './order-status-manager'
 
 async function getOrder(id: string) {
   const headers = await getHeaders()
@@ -205,18 +206,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 </div>
               )}
 
-              {order.status === 'intent' && (
-                <div className="pt-2 space-y-2">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Schedule Pickup
-                  </Button>
-                  <Button size="sm" className="w-full">
-                    <Package className="h-4 w-4 mr-2" />
-                    Mark as Picked Up
-                  </Button>
-                </div>
-              )}
+              <OrderStatusManager order={order} />
             </CardContent>
           </Card>
         </div>
@@ -250,123 +240,171 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <div className="text-center py-8">
                   <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">No items added to this order yet.</p>
-                  {order.status === 'intent' && (
-                    <Button className="mt-4" size="sm">
-                      Add Items During Pickup
-                    </Button>
+                  {(order.status === 'intent' || order.status === 'inProgress') && (
+                    <Link href={`/dashboard/orders/${order.id}/add-items`}>
+                      <Button className="mt-4" size="sm">
+                        <Package className="h-4 w-4 mr-2" />
+                        Add Items
+                      </Button>
+                    </Link>
                   )}
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {items.map((item: any, index: number) => {
+                  {items.map((item: any) => {
                     const itemStatus = itemStatusConfig[item.status as keyof typeof itemStatusConfig]
+                    const primaryImage = item.attachedImages?.[0]?.image
+                    
                     return (
-                      <div key={item.id || index}>
-                        <div className="flex items-start justify-between p-4 border rounded-lg">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <h3 className="font-semibold">{item.name}</h3>
-                              <Badge 
-                                variant="secondary" 
-                                className="text-xs"
-                                style={{ backgroundColor: itemStatus?.color }}
-                              >
-                                {itemStatus?.label || item.status}
-                              </Badge>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-muted-foreground">
-                              {item.price && (
-                                <div>
-                                  <span className="font-medium">Price:</span> ${item.price}
-                                </div>
-                              )}
-                              {item.tailorPayout && (
-                                <div>
-                                  <span className="font-medium">Tailor Payout:</span> ${item.tailorPayout}
-                                </div>
-                              )}
-                              {item.assignedTailor && (
-                                <div className="flex items-center space-x-1">
-                                  <Scissors className="h-3 w-3" />
-                                  <span>{item.assignedTailor.name}</span>
+                      <Link key={item.id} href={`/dashboard/items/${item.id}`} className="block group">
+                        <Card className="transition-all duration-200 group-hover:shadow-md group-hover:border-primary/50 p-4">
+                          <div className="grid grid-cols-[80px_1fr] gap-4 items-center">
+                            {/* Image Column */}
+                            <div className="aspect-square">
+                              {primaryImage ? (
+                                <img
+                                  src={primaryImage.url || primaryImage.filename}
+                                  alt={primaryImage.alt || `Image for ${item.name}`}
+                                  className="w-full h-full object-cover rounded-md"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-muted rounded-md flex items-center justify-center">
+                                  <Package className="h-8 w-8 text-muted-foreground" />
                                 </div>
                               )}
                             </div>
 
-                            {item.scheduledDelivery && (
-                              <div className="mt-2 text-sm text-muted-foreground">
-                                <span className="font-medium">Scheduled Delivery:</span> {formatDateShort(item.scheduledDelivery)}
+                            {/* Details Column */}
+                            <div className="flex flex-col justify-center">
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <h3 className="font-semibold leading-tight group-hover:text-primary transition-colors">
+                                  {item.name}
+                                </h3>
+                                <Badge 
+                                  variant="secondary" 
+                                  className="text-xs whitespace-nowrap"
+                                  style={{ 
+                                    backgroundColor: itemStatus?.color,
+                                    color: 'white' // Assuming dark colors, might need adjustment
+                                  }}
+                                >
+                                  {itemStatus?.label || item.status}
+                                </Badge>
                               </div>
-                            )}
-
-                            {item.actualDelivery && (
-                              <div className="mt-2 text-sm text-muted-foreground">
-                                <span className="font-medium">Delivered:</span> {formatDateShort(item.actualDelivery)}
-                              </div>
-                            )}
-
-                            {item.actionPoints && item.actionPoints.length > 0 && (
-                              <div className="mt-3">
-                                <h4 className="font-medium text-sm mb-1">Action Points:</h4>
-                                <ul className="text-sm text-muted-foreground space-y-1">
-                                  {item.actionPoints.map((point: any, pointIndex: number) => (
-                                    <li key={pointIndex}>• {point.actionPoint}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-
-                          {item.attachedImages && item.attachedImages.length > 0 && (
-                            <div className="ml-4">
-                              <div className="flex flex-wrap gap-2">
-                                {item.attachedImages.slice(0, 2).map((img: any, imgIndex: number) => (
-                                  <div key={imgIndex} className="w-16 h-16 bg-muted rounded border">
-                                    {/* Image placeholder - implement actual image display */}
-                                    <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                                      IMG
-                                    </div>
+                              
+                              <div className="space-y-1.5 text-xs text-muted-foreground">
+                                {item.price && (
+                                  <div className="flex items-center space-x-1">
+                                    <DollarSign className="h-3 w-3" />
+                                    <span>
+                                      Price: <strong>${(item.price / 100).toFixed(2)}</strong>
+                                    </span>
                                   </div>
-                                ))}
-                                {item.attachedImages.length > 2 && (
-                                  <div className="w-16 h-16 bg-muted rounded border flex items-center justify-center text-xs text-muted-foreground">
-                                    +{item.attachedImages.length - 2}
+                                )}
+                                {item.assignedTailor && (
+                                  <div className="flex items-center space-x-1">
+                                    <User className="h-3 w-3" />
+                                    <span>
+                                      Tailor: <strong>{item.assignedTailor.name}</strong>
+                                    </span>
                                   </div>
                                 )}
                               </div>
+                              
+                              {item.scheduledDelivery && (
+                                <div className="flex items-center space-x-1 text-xs text-muted-foreground mt-2">
+                                  <Calendar className="h-3 w-3" />
+                                  <span>
+                                    Delivery: <strong>{formatDateShort(item.scheduledDelivery)}</strong>
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                        {index < items.length - 1 && <Separator className="my-4" />}
-                      </div>
+                          </div>
+                        </Card>
+                      </Link>
                     )
                   })}
                 </div>
               )}
 
               {/* Action Buttons */}
-              {order.status === 'inProgress' && (
-                <div className="mt-6 pt-4 border-t">
-                  <Button className="w-full">
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Mark Items as Delivered
-                  </Button>
+              {(order.status === 'intent' || order.status === 'inProgress') && items.length > 0 && (
+                <div className="mt-6 pt-4 border-t space-y-3">
+                  <Link href={`/dashboard/orders/${order.id}/add-items`}>
+                    <Button variant="outline" className="w-full">
+                      <Package className="h-4 w-4 mr-2" />
+                      Add More Items
+                    </Button>
+                  </Link>
                 </div>
               )}
 
               {order.status === 'completed' && (
                 <div className="mt-6 pt-4 border-t">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-semibold">Total Amount:</span>
-                    <span className="text-lg font-bold">
-                      ${items.reduce((sum: number, item: any) => sum + (item.price || 0), 0)}
-                    </span>
+                  <div className="space-y-4">
+                    {/* Financial Summary */}
+                    <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+                      <h4 className="font-semibold flex items-center space-x-2">
+                        <DollarSign className="h-4 w-4" />
+                        <span>Financial Summary</span>
+                      </h4>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span>Customer Total:</span>
+                          <span className="font-semibold">
+                            ${(items.reduce((sum: number, item: any) => sum + (item.price || 0), 0) / 100).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Tailor Payouts:</span>
+                          <span className="font-semibold text-orange-600">
+                            -${(items.reduce((sum: number, item: any) => sum + (item.tailorPayout || 0), 0) / 100).toFixed(2)}
+                          </span>
+                        </div>
+                        <Separator />
+                        <div className="flex items-center justify-between font-bold">
+                          <span>Net Profit:</span>
+                          <span className="text-green-600">
+                            {`$${(((items.reduce((sum: number, item: any) => sum + (item.price || 0), 0) -
+                               items.reduce((sum: number, item: any) => sum + (item.tailorPayout || 0), 0))) / 100).toFixed(2)}`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stripe Actions */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold flex items-center space-x-2">
+                        <CreditCard className="h-4 w-4" />
+                        <span>Payment & Invoicing</span>
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Button variant="default" className="w-full">
+                          <Receipt className="h-4 w-4 mr-2" />
+                          Create Invoice
+                        </Button>
+                        <Button variant="outline" className="w-full">
+                          <Send className="h-4 w-4 mr-2" />
+                          Send Invoice
+                        </Button>
+                      </div>
+                      
+                      <Button variant="secondary" className="w-full">
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Create Payment Link
+                      </Button>
+                      
+                      <div className="text-xs text-muted-foreground">
+                        <p>• Invoice will include all completed items</p>
+                        <p>• Payment link allows customer to pay online</p>
+                        <p>• All transactions processed via Stripe</p>
+                      </div>
+                    </div>
                   </div>
-                  <Button variant="outline" className="w-full">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Send Invoice
-                  </Button>
                 </div>
               )}
             </CardContent>
